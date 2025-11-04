@@ -20,27 +20,27 @@ public struct Action
     public float pos;
 }
 
-public class Funscript
+public partial class Funscript
 {
     public string Name { get; private set; }
     public List<Action> Actions = new List<Action>();
 
     public Funscript(Godot.Collections.Dictionary changeEvent)
     {
-        Name = changeEvent["name"] as string;
+        Name = changeEvent["name"].AsString();
         UpdateFromEvent(changeEvent);
     }
 
     public void UpdateFromEvent(Godot.Collections.Dictionary changeEvent)
     {
         Actions.Clear();
-        var script = changeEvent["funscript"] as Godot.Collections.Dictionary;
-        var actions = script["actions"] as Godot.Collections.Array;
+        var script = changeEvent["funscript"].AsGodotDictionary();
+        var actions = script["actions"].AsGodotArray();
         foreach(Godot.Collections.Dictionary action in actions)
         {
             Actions.Add(new Action() { 
-                timestamp = (action["at"] as float? ?? 0.0f) / 1000.0f,
-                pos = action["pos"] as float? / 100.0f ?? 0.0f
+                timestamp = action["at"].AsSingle() / 1000.0f,
+                pos = action["pos"].AsSingle() / 100.0f
             });
         }
     }

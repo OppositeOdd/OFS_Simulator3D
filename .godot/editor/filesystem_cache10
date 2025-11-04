@@ -1,0 +1,16 @@
+72322a848ab928aa5c89f0cb78209805
+::res://::1762292249
+BorderlessWindow.cs::CSharpScript::1877089827845510013::1762290279::0::1::::<>Control<><>0<>0<><>::
+default_env.tres::Environment::4404133010803961041::1762291672::0::1::::<><><>0<>0<><>::
+export_presets.cfg::TextFile::-1::1762291712::0::1::::<><><>0<>0<><>::
+favicon.ico::OtherFile::-1::1762287577::0::1::::<><><>0<>0<><>::
+favicon.png::CompressedTexture2D::3860895192993943372::1762287577::1762289330::1::::<><><>0<>0<>e3132b965ce75bf79fd0bf7f5457a066<>res://.godot/imported/favicon.png-05a5f25b7b35b567a640a7daf7751a8e.ctex::
+Funscript.cs::CSharpScript::7167258718306245374::1762290489::0::1::::<><><>0<>0<><>::
+InputListener.gd::GDScript::8911252402973578334::1762289126::0::1::::<>Node<><>0<>0<><>::
+LineDrawer.gd::GDScript::3280753820771074573::1762290626::0::1::::<>MeshInstance3D<><>0<>0<><>::
+Main.tscn::PackedScene::9066652307437720879::1762292210::0::1::::<><><>0<>0<><>::uid://bm0eyelrhhirh::::res://Simulator3D.cs<>uid://10jno4wr0b2l::::res://BorderlessWindow.cs<>uid://lwhejiimdrm8::::res://ResizeHandle.cs<>uid://bm0hsh0bbcv62::::res://LineDrawer.gd<>uid://dy7xa4btyquwc::::res://InputListener.gd
+README.md::TextFile::-1::1762287577::0::1::::<><><>0<>0<><>::
+ResizeHandle.cs::CSharpScript::817926238180900181::1762290279::0::1::::<>Control<><>0<>0<><>::
+Simulator3D.cs::CSharpScript::3280582206094058097::1762291616::0::1::::<>Node3D<><>0<>0<><>::
+::res://font/::1762289330
+Roboto-Regular.ttf::FontFile::1946949600081532806::1762287577::1762289330::1::::<><><>0<>0<>3b6af6aef3b83056d4185a5547ca8600<>res://.godot/imported/Roboto-Regular.ttf-0b303fcf305e90625f7ff798f95603db.fontdata::

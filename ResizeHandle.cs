@@ -9,13 +9,13 @@ public enum ResizeHandleType
 	Right
 }
 
-public class ResizeHandle : Control
+public partial class ResizeHandle : Control
 {
 	[Export]
 	private ResizeHandleType handleType;
 	private bool isResizing = false;
 	private Vector2 resizePos = Vector2.Zero;
-	private Vector2 startSize = Vector2.Zero;
+	private Vector2I startSize = Vector2I.Zero;
 
 	public override void _Ready()
 	{
@@ -36,11 +36,11 @@ public class ResizeHandle : Control
 	{
 		if(ev is InputEventMouseButton button)
 		{
-			if(button.ButtonIndex == (int)ButtonList.Left)
+			if(button.ButtonIndex == MouseButton.Left)
 			{
 				if(button.Pressed && !isResizing) {
 					isResizing = true;
-					startSize = OS.WindowSize;
+					startSize = DisplayServer.WindowGetSize();
 					resizePos = GetGlobalMousePosition();
 				}
 				else
@@ -49,7 +49,7 @@ public class ResizeHandle : Control
 		}
 	}
 
-	public override void _Process(float delta)
+	public override void _Process(double delta)
 	{
 		if(isResizing)
 		{
@@ -58,29 +58,31 @@ public class ResizeHandle : Control
 			{
 				case ResizeHandleType.Top:
 				{
-					var newPos = OS.WindowPosition + mousePos - resizePos;
-					newPos.x = OS.WindowPosition.x;
-					var deltaPos = OS.WindowPosition - newPos;
-					startSize += new Vector2(0.0f, deltaPos.y);
-					OS.WindowPosition = newPos;
-					OS.WindowSize = startSize;
+					var currentPos = DisplayServer.WindowGetPosition();
+					var newPos = currentPos + (Vector2I)(mousePos - resizePos);
+					newPos.X = currentPos.X;
+					var deltaPos = currentPos - newPos;
+					startSize += new Vector2I(0, deltaPos.Y);
+					DisplayServer.WindowSetPosition(newPos);
+					DisplayServer.WindowSetSize(startSize);
 					break;
 				}
 				case ResizeHandleType.Bottom:
-					OS.WindowSize = startSize + new Vector2(0.0f, mousePos.y - resizePos.y);
+					DisplayServer.WindowSetSize(startSize + new Vector2I(0, (int)(mousePos.Y - resizePos.Y)));
 					break;
 				case ResizeHandleType.Left:
 				{
-					var newPos = OS.WindowPosition + mousePos - resizePos;
-					newPos.y = OS.WindowPosition.y;
-					var deltaPos = OS.WindowPosition - newPos;
-					startSize += new Vector2(deltaPos.x, 0.0f);
-					OS.WindowPosition = newPos;
-					OS.WindowSize = startSize;
+					var currentPos = DisplayServer.WindowGetPosition();
+					var newPos = currentPos + (Vector2I)(mousePos - resizePos);
+					newPos.Y = currentPos.Y;
+					var deltaPos = currentPos - newPos;
+					startSize += new Vector2I(deltaPos.X, 0);
+					DisplayServer.WindowSetPosition(newPos);
+					DisplayServer.WindowSetSize(startSize);
 					break;
 				}
 				case ResizeHandleType.Right:
-					OS.WindowSize = startSize + new Vector2(mousePos.x - resizePos.x, 0.0f);
+					DisplayServer.WindowSetSize(startSize + new Vector2I((int)(mousePos.X - resizePos.X), 0));
 					break;
 			}
 		}

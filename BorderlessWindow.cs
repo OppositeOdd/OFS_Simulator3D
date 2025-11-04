@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public class BorderlessWindow : Control
+public partial class BorderlessWindow : Control
 {
 	private ResizeHandle topBar;
 	private ResizeHandle bottomBar;
@@ -14,9 +14,9 @@ public class BorderlessWindow : Control
 
 	public override void _Ready()
 	{
-		GetTree().Root.TransparentBg = true;
-		OS.WindowBorderless = true;
-		OS.SetWindowAlwaysOnTop(true);
+		GetWindow().Transparent = true;
+		DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.Borderless, true);
+		DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.AlwaysOnTop, true);
 
 		topBar = GetNode<ResizeHandle>("TopHandle");
 		bottomBar = GetNode<ResizeHandle>("BottomHandle");
@@ -30,7 +30,7 @@ public class BorderlessWindow : Control
 	{
 		if(ev is InputEventMouseButton button)
 		{
-			if(button.ButtonIndex == (int)ButtonList.Left)
+			if(button.ButtonIndex == MouseButton.Left)
 			{
 				if(button.Pressed && !isMovingWindow)
 				{
@@ -45,11 +45,11 @@ public class BorderlessWindow : Control
 		}
 	}
 
-	public override void _Process(float delta)
+	public override void _Process(double delta)
 	{
 		if(isMovingWindow)
 		{
-			OS.WindowPosition = OS.WindowPosition + GetGlobalMousePosition() - windowTranslationOffset;
+			DisplayServer.WindowSetPosition(DisplayServer.WindowGetPosition() + (Vector2I)(GetGlobalMousePosition() - windowTranslationOffset));
 		}
 	}
 }

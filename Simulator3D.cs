@@ -3,12 +3,12 @@ using System;
 using System.Text;
 using System.Linq;
 
-public class Simulator3D : Spatial
+public partial class Simulator3D : Node3D
 {
 	[Export]
 	private string WsSocketUrl = "ws://127.0.0.1:8080/ofs";
 
-	private WebSocketClient webSocketClient;
+	private WebSocketPeer webSocketClient;
 	public bool ClientConnected { get; private set; } = false;
 
 	public float CurrentTime { get; private set; } = 0.0f;
@@ -16,7 +16,7 @@ public class Simulator3D : Spatial
 	public float PlaybackSpeed { get; private set; } = 1.0f;
 
 	private Label label;
-	private MeshInstance strokerMesh;
+	private MeshInstance3D strokerMesh;
 	private Funscript[] scripts = new Funscript[(int)ScriptType.TypeCount];
 
 	public override void _Ready()
@@ -28,17 +28,12 @@ public class Simulator3D : Spatial
 		}
 
 		label = GetNode<Label>("UI/Label");
-		strokerMesh = GetNode<MeshInstance>("Stroker");
+		strokerMesh = GetNode<MeshInstance3D>("Stroker");
 
-		webSocketClient = new WebSocketClient();
-		webSocketClient.Connect("connection_closed", this, nameof(connectionClosed));
-		webSocketClient.Connect("connection_error", this, nameof(connectionError));
-		webSocketClient.Connect("data_received", this, nameof(dataReceived));
-		webSocketClient.Connect("server_close_request", this, nameof(serverCloseRequest));
-		webSocketClient.Connect("connection_established", this, nameof(connectionEstablished));
-
-		var error = webSocketClient.ConnectToUrl(WsSocketUrl, new string[]{"ofs-api.json"});
+		webSocketClient = new WebSocketPeer();
+		var error = webSocketClient.ConnectToUrl(WsSocketUrl);
 		GD.Print("Connecting to ", WsSocketUrl, " Error: ", error);
+		GD.Print("WebSocket initial state: ", webSocketClient.GetReadyState());
 		label.Text = $"Trying to connect to {WsSocketUrl}";
 	}
 
@@ -46,7 +41,7 @@ public class Simulator3D : Spatial
 	// {
 	//     if(ev is InputEventKey key)
 	//     {
-	//         if(key.Pressed && !key.Echo && key.Scancode == 'P')
+	//         if(key.Pressed && !key.Echo && key.Keycode == Key.P)
 	//         {
 	//             var playCommand = new Godot.Collections.Dictionary();
 	//             playCommand["type"] = "command";
@@ -55,7 +50,7 @@ public class Simulator3D : Spatial
 	//             {
 	//                 { "playing", !IsPlaying }
 	//             };
-	//             var jsonMsg = JSON.Print(playCommand);
+	//             var jsonMsg = Json.Stringify(playCommand);
 	//             GD.Print(jsonMsg);
 	//             webSocketClient.GetPeer(1).SetWriteMode(WebSocketPeer.WriteMode.Text);
 	//             webSocketClient.GetPeer(1).PutPacket(Encoding.UTF8.GetBytes(jsonMsg));
@@ -88,7 +83,7 @@ public class Simulator3D : Spatial
 
 	private void addOrUpdate(Godot.Collections.Dictionary changeEvent)
 	{
-		var name = changeEvent["name"] as string;
+		var name = changeEvent["name"].AsString();
 		var type = getScriptType(name);
 		if(type.HasValue)
 		{
@@ -113,74 +108,60 @@ public class Simulator3D : Spatial
 			scripts[script.Item2] = null;
 	}
 	
-	private void connectionError()
-	{
-		ClientConnected = false;
-		label.Text = "Connection error";
-		
-		scripts = new Funscript[(int)ScriptType.TypeCount];
-		var error = webSocketClient.ConnectToUrl(WsSocketUrl, new string[]{"ofs-api.json"});
-		GD.Print("Connecting to ", WsSocketUrl, " Error: ", error);
-	}
-
 	private void connectionClosed(bool wasClean)
 	{
 		ClientConnected = false;
-		label.Text = "Connection closed";
+		label.Text = "Connection lost - attempting reconnect...";
+		GD.Print("WebSocket connection closed, attempting to reconnect...");
 
 		scripts = new Funscript[(int)ScriptType.TypeCount];
-		var error = webSocketClient.ConnectToUrl(WsSocketUrl, new string[]{"ofs-api.json"});
-		GD.Print("Connecting to ", WsSocketUrl, " Error: ", error);
+		
+		// Attempt to reconnect after a short delay
+		GetTree().CreateTimer(2.0).Connect("timeout", new Callable(this, nameof(attemptReconnect)));
 	}
-
-	private void connectionEstablished(string protocol)
+	
+	private void attemptReconnect()
 	{
-		ClientConnected = true;
-		GD.Print("Connection established.");
-		label.Text = "";
-	}
-
-	private void serverCloseRequest(int code, string reason)
-	{
-		GD.Print("!!!!!!!UNHANDLED SERVER CLOSE REQUEST!!!!!!!");
-		throw new NotImplementedException();
+		var error = webSocketClient.ConnectToUrl(WsSocketUrl);
+		GD.Print("Reconnecting to ", WsSocketUrl, " Error: ", error);
+		label.Text = $"Reconnecting to {WsSocketUrl}";
 	}
 
 	private void dataReceived()
 	{
-		var packet = webSocketClient.GetPeer(1).GetPacket();
+		var packet = webSocketClient.GetPacket();
 		string response = Encoding.UTF8.GetString(packet);
 
-		var json = JSON.Parse(response);
-		if(json.Error == Error.Ok)
+		var json = Json.ParseString(response);
+		if(json.VariantType != Variant.Type.Nil)
 		{
-			var obj = json.Result as Godot.Collections.Dictionary;
-			if(!obj.Contains("type")) return;
+			var obj = json.AsGodotDictionary();
+			if(!obj.ContainsKey("type")) return;
 
-			string type = obj["type"] as string;
+			string type = obj["type"].AsString();
 			if(type == "event")
 			{
-				var data = obj["data"] as Godot.Collections.Dictionary;
-				switch(obj["name"] as string)
+				var data = obj["data"].AsGodotDictionary();
+				switch(obj["name"].AsString())
 				{
 					case "time_change":
-						CurrentTime = data["time"] as float? ?? 0.0f;
+						CurrentTime = data["time"].AsSingle();
 						break;
 					case "project_change":
 						scripts = new Funscript[(int)ScriptType.TypeCount];
 						break;
 					case "play_change":
-						IsPlaying = data["playing"] as bool? ?? false;
+						IsPlaying = data["playing"].AsBool();
 						break;
 					case "playbackspeed_change":
-						PlaybackSpeed = data["speed"] as float? ?? 1.0f;
+						PlaybackSpeed = data["speed"].AsSingle();
 						break;
 					case "funscript_change":
 						GD.Print("Funscript update: ", data["name"]);
 						addOrUpdate(data);
 						break;
 					case "funscript_remove":
-						removeScript(data["name"] as string);
+						removeScript(data["name"].AsString());
 						break;
 				}
 			}
@@ -188,14 +169,42 @@ public class Simulator3D : Spatial
 		}        
 	}
 
-	public override void _Process(float delta)
+	public override void _Process(double delta)
 	{
 		webSocketClient.Poll();
+		
+		// Check connection state in Godot 4.x
+		var state = webSocketClient.GetReadyState();
+		switch(state)
+		{
+			case WebSocketPeer.State.Open:
+				if (!ClientConnected)
+				{
+					ClientConnected = true;
+					GD.Print("WebSocket connection established.");
+					label.Text = "";
+				}
+				// Check for incoming data
+				while (webSocketClient.GetAvailablePacketCount() > 0)
+				{
+					dataReceived();
+				}
+				break;
+			case WebSocketPeer.State.Closed:
+				if (ClientConnected)
+				{
+					connectionClosed(false);
+				}
+				break;
+			case WebSocketPeer.State.Connecting:
+				// Still connecting, do nothing
+				break;
+		}
 
 		if(IsPlaying) {
 			// This is supposed to smooth out the timer
 			// in between time updates received via the websocket
-			CurrentTime += delta * PlaybackSpeed;
+			CurrentTime += (float)(delta * PlaybackSpeed);
 		}
 
 		float mainStroke = 0.5f;
@@ -248,24 +257,24 @@ public class Simulator3D : Spatial
 		);
 
 		strokerMesh.GlobalRotate(Vector3.Right,
-			Mathf.Deg2Rad(
+			Mathf.DegToRad(
 				Mathf.Lerp(30f, -30f, pitch)
 			)
 		);
 
 		strokerMesh.GlobalRotate(Vector3.Forward,
-			Mathf.Deg2Rad(
+			Mathf.DegToRad(
 				Mathf.Lerp(-30.0f, 30.0f, roll)
 			)
 		);
 
 		strokerMesh.RotateObjectLocal(Vector3.Up, 
-			Mathf.Deg2Rad(
+			Mathf.DegToRad(
 				Mathf.Lerp(-135.0f, 135.0f, twist)
 			)
 		);
 
-		strokerMesh.Translation = new Vector3(
+		strokerMesh.Position = new Vector3(
 			Mathf.Lerp(0.5f, -0.5f, sway),
 			Mathf.Lerp(-1.0f, 1.0f, mainStroke),
 			Mathf.Lerp(0.5f, -0.5f, surge)

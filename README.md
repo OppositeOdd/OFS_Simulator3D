@@ -12,7 +12,7 @@ This app isn’t notarized. On first launch, macOS will block it.
 **Option B – Terminal (remove quarantine):**
 ```bash
 xattr -dr com.apple.quarantine "/Applications/OFS Simulator 3D.app"
-
+```
 <img src="https://github.com/ZestyRaraferu/OFS_Simulator3D/blob/1.2.1/favicon.png" width="128">
 
 # OFS_Simulator3D

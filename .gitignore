@@ -1,22 +1,13 @@
 ﻿.import
 .mono
 .vscode
-export_presets.cfg
-# macOS
 .DS_Store
-
-# Godot (cache & editor state — keep project.godot and .import files next to assets)
 .godot/
-
-# .NET build outputs
 **/bin/
 **/obj/
-
-# IDE
-.vscode/
-.idea/
-
-# Releases/archives
 *.dmg
+*.exe
 *.zip
+*.7z
+*.tar
 

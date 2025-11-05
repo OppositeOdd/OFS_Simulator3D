@@ -9,7 +9,7 @@ After moving the .app bundle into "~/Applications"
 
 **Option A – GUI (one time):**
 1. Right-click the app → **Open**.
-2. In the dialog, click **Open** again.
+2. MacOS will block it, go to System Settings > Privacy and Security > Open Anyway
 
 **Option B – Terminal (remove quarantine):**
 ```bash

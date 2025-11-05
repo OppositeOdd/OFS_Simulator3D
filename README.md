@@ -2,6 +2,17 @@ A Fork of ZestyRaraferu's version of OpenFunScripter's OFS_Simulator3D.
 
 This was made to be compatible with AppleSilicon ARM64 Architecture. As such, the Godot had to be updated along with respective references.
 
+### macOS first run (unsigned build)
+This app isn’t notarized. On first launch, macOS will block it.
+
+**Option A – GUI (one time):**
+1. Right-click the app → **Open**.
+2. In the dialog, click **Open** again.
+
+**Option B – Terminal (remove quarantine):**
+```bash
+xattr -dr com.apple.quarantine "/Applications/OFS Simulator 3D.app"
+
 <img src="https://github.com/ZestyRaraferu/OFS_Simulator3D/blob/1.2.1/favicon.png" width="128">
 
 # OFS_Simulator3D

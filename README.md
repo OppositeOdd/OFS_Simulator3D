@@ -1,6 +1,6 @@
 A Fork of ZestyRaraferu's version of OpenFunScripter's OFS_Simulator3D.
 
-This was made to be compatible with AppleSilicon ARM64 Architecture. As such, the Godot had to be updated along with respective references.
+This was made to be compatible with AppleSilicon ARM64 Architecture. Godot was also updated to the latest version
 
 ### macOS first run (unsigned build)
 This app isn’t notarized. On first launch, macOS will block it.

@@ -5,13 +5,15 @@ This was made to be compatible with AppleSilicon ARM64 Architecture. As such, th
 ### macOS first run (unsigned build)
 This app isn’t notarized. On first launch, macOS will block it.
 
+After moving the .app bundle into "~/Applications"
+
 **Option A – GUI (one time):**
 1. Right-click the app → **Open**.
 2. In the dialog, click **Open** again.
 
 **Option B – Terminal (remove quarantine):**
 ```bash
-xattr -dr com.apple.quarantine "/Applications/OFS Simulator 3D.app"
+xattr -dr com.apple.quarantine "/Applications/FunscriptSimulator3D.app"
 ```
 <img src="https://github.com/ZestyRaraferu/OFS_Simulator3D/blob/1.2.1/favicon.png" width="128">
 

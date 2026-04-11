@@ -17,7 +17,7 @@ This project uses godot 3.5.3 with C# mono support.
 
   - Y-Axis +- 15 degrees Left and Right DPad
   - X-Axis +- 15 degrees Up and Down DPad
-  - Z-Axis +- 15 degrees Left and Right DPad
+  - Z-Axis +- 15 degrees Shift + Left/Right DPad
   - Reset to default position using 'R'
 
 - Added more visual twist reference guides to the front and back of the main stroke simulator.

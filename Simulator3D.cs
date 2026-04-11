@@ -17,7 +17,15 @@ public class Simulator3D : Spatial
 
 	private Label label;
 	private MeshInstance strokerMesh;
+	private ValveGauge valveGauge;
 	private Funscript[] scripts = new Funscript[(int)ScriptType.TypeCount];
+
+	private float upVel = 0f;
+	private float lastStrokePos = 0.5f;
+	private float valvePos = 0f;
+	private float lastValveRaw = 0f;
+	private float lastSuckRaw = 0f;
+	private bool suckIsActive = false;
 
 	public override void _Ready()
 	{
@@ -29,6 +37,7 @@ public class Simulator3D : Spatial
 
 		label = GetNode<Label>("UI/Label");
 		strokerMesh = GetNode<MeshInstance>("Stroker");
+		valveGauge = GetNode<ValveGauge>("UI/ValveGauge");
 
 		webSocketClient = new WebSocketClient();
 		webSocketClient.Connect("connection_closed", this, nameof(connectionClosed));
@@ -82,6 +91,10 @@ public class Simulator3D : Spatial
 			return ScriptType.Sway;
 		else if (last.Contains("surge") || last.Contains("l1"))
 			return ScriptType.Surge;
+		else if (last.Contains("suck") || last.Contains("a1"))
+			return ScriptType.Suck;
+		else if (last.Contains("valve") || last.Contains("a0"))
+			return ScriptType.Valve;
 
 		return null;
 	}
@@ -95,10 +108,10 @@ public class Simulator3D : Spatial
 			var script = scripts[(int)type.Value];
 			if(script == null)
 				scripts[(int)type.Value] = new Funscript(changeEvent);
-			else 
+			else
 				script.UpdateFromEvent(changeEvent);
 		}
-		else 
+		else
 		{
 			GD.PrintErr("Failed to determine script type for ", name);
 		}
@@ -112,12 +125,12 @@ public class Simulator3D : Spatial
 		if(script != null)
 			scripts[script.Item2] = null;
 	}
-	
+
 	private void connectionError()
 	{
 		ClientConnected = false;
 		label.Text = "Connection error";
-		
+
 		scripts = new Funscript[(int)ScriptType.TypeCount];
 		var error = webSocketClient.ConnectToUrl(WsSocketUrl, new string[]{"ofs-api.json"});
 		GD.Print("Connecting to ", WsSocketUrl, " Error: ", error);
@@ -185,7 +198,7 @@ public class Simulator3D : Spatial
 				}
 			}
 
-		}        
+		}
 	}
 
 	public override void _Process(float delta)
@@ -234,12 +247,65 @@ public class Simulator3D : Spatial
 			var script = scripts[(int)ScriptType.Pitch];
 			pitch = script.GetPositionAt(CurrentTime);
 		}
-		
+
 		if(scripts[(int)ScriptType.Twist] != null)
 		{
 			var script = scripts[(int)ScriptType.Twist];
 			twist = script.GetPositionAt(CurrentTime);
 		}
+
+		// --- Valve logic (mirrors TCodeESP32 firmware MotorHandler0_4::executeValve) ---
+		float valveRaw = 0f;
+		float suckRaw = 0f;
+
+		if(scripts[(int)ScriptType.Valve] != null)
+			valveRaw = scripts[(int)ScriptType.Valve].GetPositionAt(CurrentTime);
+
+		if(scripts[(int)ScriptType.Suck] != null)
+			suckRaw = scripts[(int)ScriptType.Suck].GetPositionAt(CurrentTime);
+
+		float valveDelta = Mathf.Abs(valveRaw - lastValveRaw);
+		float suckDelta = Mathf.Abs(suckRaw - lastSuckRaw);
+		if(suckDelta > 0.001f)
+			suckIsActive = true;
+		if(valveDelta > 0.001f)
+			suckIsActive = false;
+		lastValveRaw = valveRaw;
+		lastSuckRaw = suckRaw;
+
+		float valveCmd;
+		if(suckIsActive && scripts[(int)ScriptType.Suck] != null)
+		{
+			float strokeNow = mainStroke;
+			if(delta > 0f)
+			{
+				float velNow = (strokeNow - lastStrokePos) / delta;
+				upVel = (velNow + 9f * upVel) / 10f;
+			}
+			lastStrokePos = strokeNow;
+
+			valveCmd = suckRaw;
+			if(upVel < -0.5f)
+			{
+				valveCmd = 0f;
+			}
+			else if(upVel < 0f)
+			{
+				float t = Mathf.Clamp(-upVel / 0.5f, 0f, 1f);
+				valveCmd = Mathf.Lerp(suckRaw, 0f, t);
+			}
+		}
+		else
+		{
+			// A0
+			valveCmd = valveRaw;
+			lastStrokePos = mainStroke;
+			upVel = 0f;
+		}
+
+		// Smooth valve position
+		valvePos = (9f * valvePos + valveCmd) / 10f;
+		valveGauge.Value = Mathf.Clamp(valvePos, 0f, 1f);
 
 		strokerMesh.RotationDegrees = new Vector3(
 			0.0f,

@@ -2,3 +2,7 @@
 .mono
 .vscode
 export_presets.cfg
+.DS_Store
+
+# Model assets
+StrokerModelCycloneRed2/

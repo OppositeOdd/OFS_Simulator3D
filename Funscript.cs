@@ -11,6 +11,8 @@ public enum ScriptType
     Roll,
     Pitch,
     Twist,
+    Valve,
+    Suck,
     TypeCount
 }
 
